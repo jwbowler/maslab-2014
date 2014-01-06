@@ -10,7 +10,7 @@ public class KitBotModel {
     
 	public KitBotModel() {
 		try {
-			serialPort = new SerialPort("/dev/ttyACM0");
+			serialPort = new SerialPort("COM4");
             serialPort.openPort();
             serialPort.setParams(115200, 8, 1, 0);
         }
@@ -19,18 +19,8 @@ public class KitBotModel {
         }
 	}
 	
-	public void setMotorA( double power ) {
-		motorA = (byte)(power*127);
-		modified();
-	}
-	
-	public void setMotorB( double power ) {
-		motorB = (byte)(power*127);
-		modified();
-	}
-	
 	public void setMotors( double powerA, double powerB ) {
-		motorA = (byte)(powerA*127);
+		motorA = (byte)(-powerA*127);
 		motorB = (byte)(powerB*127);
 		modified();
 	}

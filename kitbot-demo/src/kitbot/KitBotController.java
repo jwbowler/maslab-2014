@@ -19,11 +19,11 @@ public class KitBotController implements MouseListener {
 		int y = me.getY();
 		
 		if ( view.left.contains(x,y) ) {
-			model.setMotors(-0.5,0.5);
+			model.setMotors(0.2,-0.2);
 		} else if ( view.right.contains(x,y) ) {
-			model.setMotors(0.5,-0.5);
+			model.setMotors(-0.2,0.2);
 		} else if ( view.forward.contains(x,y) ) {
-			model.setMotors(0.5,0.5);
+			model.setMotors(0.2,0.2);
 		} else if ( view.stop.contains(x,y) ) {
 			model.setMotors(0,0);
 		}

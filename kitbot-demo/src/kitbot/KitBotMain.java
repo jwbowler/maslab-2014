@@ -4,10 +4,6 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import jssc.SerialPort;
-import jssc.SerialPortException;
-
-
 public class KitBotMain {
 	
     public static void main(String[] args) {
@@ -24,18 +20,20 @@ public class KitBotMain {
     	
     	JFrame window = new JFrame("Kit Bot Interface");
     	window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    	window.setSize(width,height);
-    	window.setVisible(true);
     	
     	KitBotModel model = new KitBotModel();
     	KitBotView view = new KitBotView(width,height,window);
     	KitBotController controller = new KitBotController(model,view);
     	
-    	model.setMotorA(1);
-    	model.setMotorA(0);
-    	model.setMotorA(-1);
-    	model.setMotorA(0.5);
-    	model.setMotorA(-0.5);
+    	window.setSize(width,height);
+    	window.setVisible(true);
+    	
+    	while ( true ) {
+    		try {
+    			Thread.sleep(100);
+    			view.repaint();
+    		} catch ( Exception e ) {}
+    	}
     }
     
 }
