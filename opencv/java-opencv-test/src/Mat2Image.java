@@ -33,6 +33,9 @@ public class Mat2Image {
         int w = mat.cols();
         int h = mat.rows();
         int c = mat.channels();
+        System.out.println(w);
+        System.out.println(h);
+        System.out.println(c);
         if (dat == null || dat.length != w * h * c) {
             dat = new byte[w * h * c];
             System.out.println(1);

@@ -23,6 +23,7 @@ public class ImageProcessor {
 		buffers = new ArrayList<Mat>();
 		for (int i = 0; i < numBuffers; i++) {
 			buffers.add(new Mat(new Size(), CvType.CV_8UC3));
+			
 			buffers.add(new Mat(new Size(), CvType.CV_8UC1));
 			buffers.add(new Mat(new Size(), CvType.CV_8UC1));
 			buffers.add(new Mat(new Size(), CvType.CV_8UC1));
@@ -36,6 +37,11 @@ public class ImageProcessor {
 	//  the output image will be for your visual reference,
 	//  but you will mainly want to output a list of the locations of detected objects.)
 	public void process(Mat rawImage, Mat processedImage) {
+		
+		// These two lines are a workaround for the fact that CvtColor throws weird errors
+		// when you try to convert from a 3-channel (BGR) image to a 1-channel (grayscale) image.
+		// The following is a workaround: convert BGR to HSV, and take only the V channel
+		// (which will end up in buffers.get(3)).
 		Imgproc.cvtColor(rawImage, buffers.get(0), Imgproc.COLOR_BGR2HSV);
 		Core.split(buffers.get(0), buffers.subList(1, 4));
 		
