@@ -39,8 +39,13 @@ public class Main {
 		JLabel cameraPane = createWindow("Camera output", width, height);
 		JLabel opencvPane = createWindow("OpenCV output", width, height);
 
-		// Main loop
+		// Set up structures for processing images
+		ImageProcessor processor = new ImageProcessor();
 		Mat rawImage = new Mat();
+		Mat processedImage = new Mat();
+		Mat2Image rawImageConverter = new Mat2Image(BufferedImage.TYPE_3BYTE_BGR);
+		Mat2Image processedImageConverter = new Mat2Image(BufferedImage.TYPE_BYTE_GRAY);
+		
 		while (true) {
 			// Wait until the camera has a new frame
 			while (!camera.read(rawImage)) {
@@ -52,11 +57,15 @@ public class Main {
 			}
 			
 			// Process the image however you like
-			Mat processedImage = ImageProcessor.process(rawImage);
+			processor.process(rawImage, processedImage);
 			
 			// Update the GUI windows
-			updateWindow(cameraPane, rawImage);
-			updateWindow(opencvPane, processedImage);
+			updateWindow(cameraPane, rawImage, rawImageConverter);
+			updateWindow(opencvPane, processedImage, processedImageConverter);
+			
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) { }
 		}
 	}
 	
@@ -73,13 +82,13 @@ public class Main {
         return imagePane;
     }
     
-    private static void updateWindow(JLabel imagePane, Mat mat) {
+    private static void updateWindow(JLabel imagePane, Mat mat, Mat2Image converter) {
     	int w = (int) (mat.size().width);
     	int h = (int) (mat.size().height);
     	if (imagePane.getWidth() != w || imagePane.getHeight() != h) {
     		imagePane.setSize(w, h);
     	}
-    	BufferedImage bufferedImage = Mat2Image.getImage(mat);
+    	BufferedImage bufferedImage = converter.getImage(mat);
     	imagePane.setIcon(new ImageIcon(bufferedImage));
     }
 

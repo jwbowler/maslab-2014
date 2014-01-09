@@ -1,33 +1,45 @@
 import java.awt.image.BufferedImage;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 public class Mat2Image {
-    static BufferedImage img;
-    static byte[] dat;
+    BufferedImage img;
+    byte[] dat;
+    Mat convMat;
+    int bufferedImageType;
     
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
+    
+    public Mat2Image(int bufferedImageType) {
+    	this.bufferedImageType = bufferedImageType;
+    }
 
-    public static BufferedImage getImage(Mat mat) {
+    public BufferedImage getImage(Mat mat) {
         allocateTempSpace(mat);
-        Mat convMat = new Mat(mat.size(), mat.type());
-        Imgproc.cvtColor(mat, convMat, Imgproc.COLOR_BGR2RGB);
-        convMat.get(0, 0, dat);
-        img.getRaster().setDataElements(0, 0, img.getWidth(), img.getHeight(), dat);
+        if (mat.type() == CvType.CV_8UC3) {
+        	Imgproc.cvtColor(mat, mat, Imgproc.COLOR_BGR2RGB);
+        }
+        mat.get(0, 0, dat);
+    	img.getRaster().setDataElements(0, 0, img.getWidth(), img.getHeight(), dat);
         return img;
     }
     
-    private static void allocateTempSpace(Mat mat) {
+    private void allocateTempSpace(Mat mat) {
         int w = mat.cols();
         int h = mat.rows();
-        if (dat == null || dat.length != w * h * 3) {
-            dat = new byte[w * h * 3];
+        int c = mat.channels();
+        if (dat == null || dat.length != w * h * c) {
+            dat = new byte[w * h * c];
+            System.out.println(1);
         }
         if (img == null || img.getWidth() != w || img.getHeight() != h) {
-            img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
+        	img = new BufferedImage(w, h, bufferedImageType);
+        	System.out.println(2);
         }
     }
 }
