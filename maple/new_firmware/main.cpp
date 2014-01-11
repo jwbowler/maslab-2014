@@ -67,6 +67,8 @@ public:
     }
     
     devicesArraySize = SerialUSB.read();
+    SerialUSB.print((char) 'n');
+    SerialUSB.print((char) devicesArraySize);
     devices = (Device**) malloc(sizeof(Device*) * devicesArraySize);
     count = 0;
 
@@ -87,6 +89,8 @@ public:
 
   void set() {
     uint8 deviceIndex = SerialUSB.read();
+    SerialUSB.print('s');
+    SerialUSB.print((char) deviceIndex);
     if (deviceIndex == END) {
       return;
     }
@@ -94,7 +98,7 @@ public:
       while (SerialUSB.read() != END) { }
       return;
     }
-    devices[SerialUSB.read()]->set();
+    devices[deviceIndex]->set();
   }
 
   void add(Device *device) {
@@ -117,14 +121,16 @@ private:
   uint8 dirPin;
 public:
   Cytron() {
-    pwmPin = SerialUSB.read();
+    SerialUSB.print('c');
     dirPin = SerialUSB.read();
+    pwmPin = SerialUSB.read();
     pinMode(pwmPin, PWM);
     pinMode(dirPin, OUTPUT);
     setSpeed(0);
   }
 
   void set() {
+    SerialUSB.print('s');
     uint16 speed = SerialUSB.read();
     speed = (speed << 8) + SerialUSB.read();
     setSpeed(speed);
@@ -151,8 +157,8 @@ public:
   void get() {
     uint8 msb = val >> 8;
     uint8 lsb = val;
-    SerialUSB.print(msb);
-    SerialUSB.print(lsb);
+    SerialUSB.print((char) msb);
+    SerialUSB.print((char) lsb);
   }
 };
 
@@ -239,8 +245,8 @@ public:
   void get() {
     uint8 msb = val >> 8;
     uint8 lsb = (uint8) val;
-    SerialUSB.print(msb);
-    SerialUSB.print(lsb);
+    SerialUSB.print((char) msb);
+    SerialUSB.print((char) lsb);
   }
 };
 
@@ -267,7 +273,13 @@ void setup() {
 
 void loop() {
   //sample sensors and buffer
-  uint8 header = SerialUSB.read();
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  digitalWrite(9, HIGH);
+  char header = SerialUSB.read();
+  digitalWrite(10, HIGH);
+  SerialUSB.print('h');
+  SerialUSB.print((char) header);
   switch (header) {
   case INIT:
     firmwareInit();
@@ -281,7 +293,12 @@ void loop() {
   case END:
     break;
   default:
-    while (SerialUSB.read() != END) { }
+    uint8 blah = 0;
+    while (blah != END) {
+      blah = SerialUSB.read();
+      SerialUSB.print('l');
+      SerialUSB.print((char) blah);
+    }
     break;
   }
 }
@@ -298,6 +315,8 @@ void firmwareInit() {
   uint8 deviceCode;
   while (true) {
     deviceCode = SerialUSB.read();
+    SerialUSB.print('i');
+    SerialUSB.print((char) deviceCode);
     switch (deviceCode) {
     case ANALOG_INPUT_CODE:
       deviceList.add(new AnalogInput());
