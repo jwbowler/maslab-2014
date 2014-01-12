@@ -68,8 +68,8 @@ public:
     
     devicesArraySize = SerialUSB.read();
     delay(20);
-    SerialUSB.print((char) 'n'); ///
-    SerialUSB.print((char) devicesArraySize); ///
+    SerialUSB.write('n'); ///
+    SerialUSB.write(devicesArraySize); ///
     devices = (Device**) malloc(sizeof(Device*) * devicesArraySize);
     count = 0;
 
@@ -92,8 +92,8 @@ public:
     while (true) {
       uint8 deviceIndex = SerialUSB.read();
       delay(20);
-      SerialUSB.print('s'); ///
-      SerialUSB.print((char) deviceIndex); ///
+      SerialUSB.write('s'); ///
+      SerialUSB.write(deviceIndex); ///
       if (deviceIndex == END) {
         return;
       }
@@ -109,7 +109,7 @@ public:
 
   void add(Device *device) {
     if (count < devicesArraySize) {
-      SerialUSB.print('a'); ///
+      SerialUSB.write('a'); ///
       devices[count] = device;
       count++;
     } else {
@@ -122,32 +122,35 @@ public:
 // DEVICE IMPLEMENTATIONS
 //===================================
 
+#define ANALOG_INPUT_CODE 'A'
+#define DIGITAL_INPUT_CODE 'D'
+#define DIGITAL_OUTPUT_CODE 'd'
+#define CYTRON_CODE 'C'
+#define PWM_OUTPUT_CODE 'P'
+#define ULTRASONIC_CODE 'U'
+
 class Cytron : public SettableDevice {
 private:    
   uint8 dirPin;
   uint8 pwmPin;
 public:
   Cytron() {
-    SerialUSB.print('c'); ///
+    SerialUSB.write('c'); ///
     dirPin = SerialUSB.read();
-    delay(20);
     pwmPin = SerialUSB.read();
-    delay(20);
-    SerialUSB.print((char) dirPin); ///
-    SerialUSB.print((char) pwmPin); ///
+    SerialUSB.write(dirPin); ///
+    SerialUSB.write(pwmPin); ///
     pinMode(dirPin, OUTPUT);
     pinMode(pwmPin, PWM);
     setSpeed(0);
   }
 
   void set() {
-    SerialUSB.print('c'); ///
+    SerialUSB.write('c'); ///
     uint8 msb = SerialUSB.read();
-    delay(20);
     uint8 lsb = SerialUSB.read();
-    delay(20);
-    SerialUSB.print((char) msb); ///
-    SerialUSB.print((char) lsb); ///
+    SerialUSB.write(msb); ///
+    SerialUSB.write(lsb); ///
     uint16 speed = msb;
     speed = (speed << 8) + lsb;
     setSpeed(speed);
@@ -167,7 +170,7 @@ private:
 public:
   AnalogInput() {
     pin = SerialUSB.read();
-    delay(20);
+    pinMode(pin, ANALOG_INPUT);
   }
   void sample() {
     val = analogRead(pin);
@@ -175,10 +178,60 @@ public:
   void get() {
     uint8 msb = val >> 8;
     uint8 lsb = val;
-    SerialUSB.print((char) msb);
-    SerialUSB.print((char) lsb);
+    SerialUSB.write(msb);
+    SerialUSB.write(lsb);
   }
 };
+
+class PwmOutput : public SettableDevice {
+private:
+  uint8 pin;
+  uint16 val;
+public:
+  PwmOutput() {
+    pin = SerialUSB.read();
+    pinMode(pin, PWM);
+  }
+  void set() {
+    uint8 msb = SerialUSB.read();
+    uint8 lsb = SerialUSB.read();
+    uint16 dutyCycle = msb;
+    dutyCycle = (speed << 8) + lsb;
+    pwmWrite(pwmPin, dutyCycle);
+  }
+}
+
+class DigitalInput : public SampleableDevice {
+private:
+  uint8 pin;
+  bool val;
+public:
+  DigitalInput() {
+    pin = SerialUSB.read();
+    pinMode(pin, INPUT);
+  }
+  void sample() {
+    val = digitalRead(pin);
+  }
+  void get() {
+    SerialUSB.write(bool);
+  }
+}
+
+class DigitalOutput : public SettableDevice {
+private:
+  uint8 pin;
+public:
+  public DigitalOutput() {
+    pin = SerialUSB.read();
+    pinMode(pin, OUTPUT);
+  }
+  void set() {
+    // note that the uint8 is used here as a boolean
+    uint8 value = SerialUSB.read();
+    digitalWrite(pin, value);
+  }
+}
 
 void ultrasonicISR(uint8 index);
 
@@ -264,8 +317,8 @@ public:
   void get() {
     uint8 msb = val >> 8;
     uint8 lsb = (uint8) val;
-    SerialUSB.print((char) msb);
-    SerialUSB.print((char) lsb);
+    SerialUSB.write(msb);
+    SerialUSB.write(lsb);
   }
 };
 
@@ -294,9 +347,9 @@ void loop() {
   //sample sensors and buffer
   char header = SerialUSB.read();
   delay(20);
-  SerialUSB.print('h'); ///
-  SerialUSB.print((char) header); ///
-  switch ((char) header) {
+  SerialUSB.write('h'); ///
+  SerialUSB.write(header); ///
+  switch (header) {
   case INIT:
     firmwareInit();
     break;
@@ -313,17 +366,14 @@ void loop() {
     while (blah != END) {
       blah = SerialUSB.read();
       delay(20);
-      SerialUSB.print('l'); ///
-      SerialUSB.print((char) blah); ///
+      SerialUSB.write('l'); ///
+      SerialUSB.write(blah); ///
     }
     break;
   }
-  SerialUSB.print('e'); ///
+  SerialUSB.write('e'); ///
 }
 
-#define ANALOG_INPUT_CODE 'A'
-#define CYTRON_CODE 'C'
-#define ULTRASONIC_CODE 'U'
 
 void firmwareInit() {
   
@@ -334,8 +384,8 @@ void firmwareInit() {
   while (true) {
     deviceCode = SerialUSB.read();
     delay(20);
-    SerialUSB.print('i'); ///
-    SerialUSB.print((char) deviceCode); ///
+    SerialUSB.write('i'); ///
+    SerialUSB.write(deviceCode); ///
     switch (deviceCode) {
     case ANALOG_INPUT_CODE:
       deviceList.add(new AnalogInput());
@@ -367,9 +417,9 @@ void get() {
 
   deviceList.sample();
   
-  SerialUSB.print(RESPONSE);
+  SerialUSB.write(RESPONSE);
   deviceList.get();
-  SerialUSB.print(END);
+  SerialUSB.write(END);
 }
 
 void set() {
