@@ -67,8 +67,9 @@ public:
     }
     
     devicesArraySize = SerialUSB.read();
-    SerialUSB.print((char) 'n');
-    SerialUSB.print((char) devicesArraySize);
+    delay(20);
+    SerialUSB.print((char) 'n'); ///
+    SerialUSB.print((char) devicesArraySize); ///
     devices = (Device**) malloc(sizeof(Device*) * devicesArraySize);
     count = 0;
 
@@ -88,21 +89,27 @@ public:
   }
 
   void set() {
-    uint8 deviceIndex = SerialUSB.read();
-    SerialUSB.print('s');
-    SerialUSB.print((char) deviceIndex);
-    if (deviceIndex == END) {
-      return;
+    while (true) {
+      uint8 deviceIndex = SerialUSB.read();
+      delay(20);
+      SerialUSB.print('s'); ///
+      SerialUSB.print((char) deviceIndex); ///
+      if (deviceIndex == END) {
+        return;
+      }
+      if (deviceIndex >= count) {
+        while (SerialUSB.read() != END) {
+          delay(20);
+        }
+        return;
+      }
+      devices[deviceIndex]->set();
     }
-    if (deviceIndex >= count) {
-      while (SerialUSB.read() != END) { }
-      return;
-    }
-    devices[deviceIndex]->set();
   }
 
   void add(Device *device) {
     if (count < devicesArraySize) {
+      SerialUSB.print('a'); ///
       devices[count] = device;
       count++;
     } else {
@@ -116,23 +123,33 @@ public:
 //===================================
 
 class Cytron : public SettableDevice {
-private:
-  uint8 pwmPin;
+private:    
   uint8 dirPin;
+  uint8 pwmPin;
 public:
   Cytron() {
-    SerialUSB.print('c');
+    SerialUSB.print('c'); ///
     dirPin = SerialUSB.read();
+    delay(20);
     pwmPin = SerialUSB.read();
-    pinMode(pwmPin, PWM);
+    delay(20);
+    SerialUSB.print((char) dirPin); ///
+    SerialUSB.print((char) pwmPin); ///
     pinMode(dirPin, OUTPUT);
+    pinMode(pwmPin, PWM);
     setSpeed(0);
   }
 
   void set() {
-    SerialUSB.print('s');
-    uint16 speed = SerialUSB.read();
-    speed = (speed << 8) + SerialUSB.read();
+    SerialUSB.print('c'); ///
+    uint8 msb = SerialUSB.read();
+    delay(20);
+    uint8 lsb = SerialUSB.read();
+    delay(20);
+    SerialUSB.print((char) msb); ///
+    SerialUSB.print((char) lsb); ///
+    uint16 speed = msb;
+    speed = (speed << 8) + lsb;
     setSpeed(speed);
   }
 
@@ -150,6 +167,7 @@ private:
 public:
   AnalogInput() {
     pin = SerialUSB.read();
+    delay(20);
   }
   void sample() {
     val = analogRead(pin);
@@ -201,15 +219,16 @@ private:
 public:
   Ultrasonic() {
     echoPin = SerialUSB.read();
+    delay(20);
     triggerPin = SerialUSB.read();
+    delay(20);
     
     digitalWrite(triggerPin,LOW);
 
     ultrasonics[ultrasonicCount] = this;
     ultrasonicCount++;
-    attachInterrupt(echoPin, ultrasonicISRList[ultrasonicCount], CHANGE);
+    //attachInterrupt(echoPin, ultrasonicISRList[ultrasonicCount], CHANGE);
   }
-
 
   void localISR() {
     if (isEchoLow) {
@@ -273,14 +292,11 @@ void setup() {
 
 void loop() {
   //sample sensors and buffer
-  pinMode(9, OUTPUT);
-  pinMode(10, OUTPUT);
-  digitalWrite(9, HIGH);
   char header = SerialUSB.read();
-  digitalWrite(10, HIGH);
-  SerialUSB.print('h');
-  SerialUSB.print((char) header);
-  switch (header) {
+  delay(20);
+  SerialUSB.print('h'); ///
+  SerialUSB.print((char) header); ///
+  switch ((char) header) {
   case INIT:
     firmwareInit();
     break;
@@ -296,11 +312,13 @@ void loop() {
     uint8 blah = 0;
     while (blah != END) {
       blah = SerialUSB.read();
-      SerialUSB.print('l');
-      SerialUSB.print((char) blah);
+      delay(20);
+      SerialUSB.print('l'); ///
+      SerialUSB.print((char) blah); ///
     }
     break;
   }
+  SerialUSB.print('e'); ///
 }
 
 #define ANALOG_INPUT_CODE 'A'
@@ -315,8 +333,9 @@ void firmwareInit() {
   uint8 deviceCode;
   while (true) {
     deviceCode = SerialUSB.read();
-    SerialUSB.print('i');
-    SerialUSB.print((char) deviceCode);
+    delay(20);
+    SerialUSB.print('i'); ///
+    SerialUSB.print((char) deviceCode); ///
     switch (deviceCode) {
     case ANALOG_INPUT_CODE:
       deviceList.add(new AnalogInput());
@@ -331,7 +350,9 @@ void firmwareInit() {
       initStatus = true;
       return;
     default:
-      while (SerialUSB.read() != END);
+      while (SerialUSB.read() != END) {
+        delay(20);
+      }
       return;
     }
   }
