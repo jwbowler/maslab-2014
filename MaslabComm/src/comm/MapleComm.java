@@ -37,10 +37,12 @@ public class MapleComm {
 		
 		// Construct the initialization message
 		ByteArrayOutputStream data = new ByteArrayOutputStream();
+		data.write((byte) deviceList.size());
 		for (MapleDevice device : deviceList) {
 			consumeSize += device.expectedNumBytesFromMaple();
 			try {
-				data.write(device.generateInitMessage());
+				data.write(device.getDeviceCode());
+				data.write(device.getInitializationBytes());
 			} catch (IOException e) { }
 		}
 		mapleIO.setExpectedInboundMessageSize(consumeSize);
@@ -62,7 +64,7 @@ public class MapleComm {
 			if (command.length > 0) {
 				data.write(counter);
 				try {
-					data.write(device.generateCommandToMaple());
+					data.write(command);
 				} catch (IOException e) { }
 			}
 			counter++;

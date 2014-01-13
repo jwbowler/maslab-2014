@@ -4,32 +4,32 @@ import java.nio.ByteBuffer;
 
 import devices.Sensor;
 
-public class Ultrasonic extends Sensor {
-	private byte echo;
-	private byte trig;
-	private int distance;
+public class Gyroscope extends Sensor {
+	byte spiPort;
+	byte ssPin;
+	int omega;
 	
-	public Ultrasonic(int i, int j) {
-		this.echo = (byte) i;
-		this.trig = (byte) j;
+	public Gyroscope(int spiPort, int ssPin) {
+		this.spiPort = (byte) spiPort;
+		this.ssPin = (byte) ssPin;
 	}
 
 	@Override
 	public byte getDeviceCode() {
-		return 'U';
+		return 'Y';
 	}
 
 	@Override
 	public byte[] getInitializationBytes() {
-		return new byte[] {echo, trig};
+		return new byte[] {spiPort, ssPin};
 	}
 
 	@Override
 	public void consumeMessageFromMaple(ByteBuffer buff) {
 		byte msb = buff.get();
 		byte lsb = buff.get();
-		// this is incorrect; ignores the conversion
-		distance = (msb * 256) + lsb;
+		// TODO: conversion
+		omega = (msb * 256) + lsb;
 	}
 
 	@Override
@@ -37,8 +37,8 @@ public class Ultrasonic extends Sensor {
 		return 2;
 	}
 	
-	public float getDistance() {
-		return distance;
+	public int getOmega() {
+		return omega;
 	}
 
 }

@@ -11,12 +11,12 @@ public class DigitalOut extends Actuator {
 	}
 
 	@Override
-	protected byte getDeviceCode() {
+	public byte getDeviceCode() {
 		return 'd';
 	}
 
 	@Override
-	protected byte[] getInitializationBytes() {
+	public byte[] getInitializationBytes() {
 		return new byte[] {pin};
 	}
 

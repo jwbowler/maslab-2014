@@ -11,12 +11,12 @@ public class PWMOut extends Actuator {
 	}
 
 	@Override
-	protected byte getDeviceCode() {
+	public byte getDeviceCode() {
 		return 'a';
 	}
 
 	@Override
-	protected byte[] getInitializationBytes() {
+	public byte[] getInitializationBytes() {
 		return new byte[] {pin};
 	}
 
