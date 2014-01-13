@@ -2,17 +2,20 @@ package devices.actuators;
 
 import devices.Actuator;
 
-public class PWMOut extends Actuator {
+public class PWMOutput extends Actuator {
 	private byte pin;
 	private int value;
 	
-	public PWMOut(int pin) {
+	/*
+	 * Takes one PWM pin (labeled on the Maple as "PWM")
+	 */
+	public PWMOutput(int pin) {
 		this.pin = (byte) pin;
 	}
 
 	@Override
 	public byte getDeviceCode() {
-		return 'a';
+		return 'P';
 	}
 
 	@Override
@@ -27,7 +30,7 @@ public class PWMOut extends Actuator {
 	}
 	
 	public void setValue(double value) {
-		this.value = (int) (value * 32767);
+		this.value = (int) (value * 65535);
 	}
 
 }

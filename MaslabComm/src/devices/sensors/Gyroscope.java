@@ -5,10 +5,19 @@ import java.nio.ByteBuffer;
 import devices.Sensor;
 
 public class Gyroscope extends Sensor {
+	private static final double CONVERSION_FACTOR = (Math.PI / 180) / 80;
+	private static final int ERROR_CODE = -32767;
+	
 	byte spiPort;
 	byte ssPin;
-	int omega;
+	double omega;
 	
+	/*
+	 * The first argument is the index of an "SPI port". There are two on the Maple.
+	 * One is pins 10-13, and the other is pins 31-34. (Read the bottom of the Maple.)
+	 * The SS pin (pin 10 or pin 31) needs to be controlled manually, so you need to
+	 * provide a fifth (digital) pin.
+	 */
 	public Gyroscope(int spiPort, int ssPin) {
 		this.spiPort = (byte) spiPort;
 		this.ssPin = (byte) ssPin;
@@ -28,8 +37,10 @@ public class Gyroscope extends Sensor {
 	public void consumeMessageFromMaple(ByteBuffer buff) {
 		byte msb = buff.get();
 		byte lsb = buff.get();
-		// TODO: conversion
-		omega = (msb * 256) + lsb;
+		int new_omega = (msb * 256) + ((int) lsb & 0xff);
+		if (new_omega != ERROR_CODE) {
+			omega = new_omega * CONVERSION_FACTOR;
+		}
 	}
 
 	@Override
@@ -37,8 +48,13 @@ public class Gyroscope extends Sensor {
 		return 2;
 	}
 	
-	public int getOmega() {
+	// in radians per second
+	public double getOmega() {
 		return omega;
+	}
+	
+	public double getAngleChangeSinceLastUpdate() {
+		throw new UnsupportedOperationException();
 	}
 
 }

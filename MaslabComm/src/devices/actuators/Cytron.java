@@ -9,6 +9,9 @@ public class Cytron extends Actuator {
 	private byte pwm = 0;
 	private int speed = 0;
 
+	/*
+	 * Takes one digital and one PWM pin (labeled on the Maple as "PWM")
+	 */
 	public Cytron(int dir_pin, int pwm_pin) {
 		this.dir = (byte) dir_pin;
 		this.pwm = (byte) pwm_pin;

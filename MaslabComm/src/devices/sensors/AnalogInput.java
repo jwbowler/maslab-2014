@@ -4,11 +4,14 @@ import java.nio.ByteBuffer;
 
 import devices.Sensor;
 
-public class AnalogIn extends Sensor {
+public class AnalogInput extends Sensor {
 	private byte signalPin = 0;
 	protected float value = 0;
 
-	public AnalogIn(int i) {
+	/*
+	 * Takes one analog-in pin (labeled on the Maple as "AIN")
+	 */
+	public AnalogInput(int i) {
 		this.signalPin = (byte) i;
 	}
 	
@@ -26,7 +29,7 @@ public class AnalogIn extends Sensor {
 	public void consumeMessageFromMaple(ByteBuffer buff) {
 		byte msb = buff.get();
 		byte lsb = buff.get();
-		value = (msb * 256) + lsb;
+		value = (Math.abs(msb) * 256) + Math.abs(lsb);
 	}
 
 	@Override

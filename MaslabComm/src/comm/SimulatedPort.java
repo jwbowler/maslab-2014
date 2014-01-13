@@ -1,8 +1,7 @@
-package simulation;
+package comm;
 
 import jssc.SerialPort;
 
-import comm.MapleIO;
 
 public class SimulatedPort extends SerialPort {
 	public SimulatedPort() {

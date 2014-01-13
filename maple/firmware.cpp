@@ -4,15 +4,15 @@
 /* features 
  [ ] dagu motor controller
  [x] cytron motor controller
- [ ] encoders
+ [ ] encoder
  [x] gyro
  [ ] servo
- [ ] ultrasonic
+ [X] ultrasonic
  [x] IR
  [x] analog read
- [ ] analog write
- [ ] digital read
- [ ] digital write
+ [X] analog write
+ [X] digital read
+ [X] digital write
  */
 
 #define LED_PIN BOARD_LED_PIN
@@ -36,7 +36,6 @@ HardwareSPI spi2(2);
 //===================================
 // UTILITY FUNCTIONS
 //===================================
-
 
 uint8 serialRead() {
     while (!SerialUSB.available());
@@ -134,12 +133,15 @@ public:
 //===================================
 
 #define ANALOG_INPUT_CODE 'A'
+#define PWM_OUTPUT_CODE 'P'
 #define DIGITAL_INPUT_CODE 'D'
 #define DIGITAL_OUTPUT_CODE 'd'
+
 #define CYTRON_CODE 'C'
 #define GYROSCOPE_CODE 'Y'
-#define PWM_OUTPUT_CODE 'P'
 #define ULTRASONIC_CODE 'U'
+
+
 
 class AnalogInput : public SampleableDevice {
 private:
@@ -149,6 +151,7 @@ public:
   AnalogInput() {
     pin = serialRead();
     pinMode(pin, INPUT_ANALOG);
+    val = 0;
   }
   void sample() {
     val = analogRead(pin);
@@ -164,11 +167,11 @@ public:
 class PwmOutput : public SettableDevice {
 private:
   uint8 pin;
-  uint16 val;
 public:
   PwmOutput() {
     pin = serialRead();
     pinMode(pin, PWM);
+    pwmWrite(pin, 0);
   }
   void set() {
     uint8 msb = serialRead();
@@ -187,6 +190,7 @@ public:
   DigitalInput() {
     pin = serialRead();
     pinMode(pin, INPUT);
+    val = false;
   }
   void sample() {
     val = digitalRead(pin);
@@ -203,6 +207,7 @@ public:
   DigitalOutput() {
     pin = serialRead();
     pinMode(pin, OUTPUT);
+    digitalWrite(pin, false);
   }
   void set() {
     // note that the uint8 is used here as a boolean
@@ -263,17 +268,20 @@ public:
     } else {
       return;
     }
-    spi->begin(SPI_4_5MHZ, MSBFIRST, SPI_MODE_0); 
-  }
-  
-  void sample() {
-    digitalWrite(ssPin, LOW);
-    delay(delayTime);
+    spi->begin(SPI_4_5MHZ, MSBFIRST, SPI_MODE_0);
     
     writeBuf[0] = 0x20;
     writeBuf[1] = 0x00;
     writeBuf[2] = 0x00;
     writeBuf[3] = 0x00;
+    
+    val = 0;
+  }
+  
+  void sample() {
+    
+    digitalWrite(ssPin, LOW);
+    delay(delayTime);
     
     readBuf[0] = spi->transfer(writeBuf[0]);
     delay(delayTime);
@@ -286,8 +294,8 @@ public:
     
     digitalWrite(ssPin, HIGH);
     
-    uint8 test = readBuf[0] & 0b00001100;
-    if (test == 0b00000100) {
+    uint8 test = ((readBuf[0] & 0b00001100) == 0b00000100);
+    if (test) {
       uint16 temp0 = (uint16) readBuf[0];
       uint16 temp1 = (uint16) readBuf[1];
       val = (readBuf[2] >> 2);
@@ -295,7 +303,7 @@ public:
       val += (temp0 << 14);  
     } else {
       // not sensor data; could be a R/W error message
-      val = 0xffff;
+      val = 0x8000;
     }
   }
   
@@ -320,13 +328,13 @@ void ultrasonicISR7() { ultrasonicISR(7); }
 
 typedef void (*UltrasonicISRPtr)();
 UltrasonicISRPtr ultrasonicISRList[8] = {&ultrasonicISR0,
-                                                &ultrasonicISR1,
-                                                &ultrasonicISR2,
-                                                &ultrasonicISR3,
-                                                &ultrasonicISR4,
-                                                &ultrasonicISR5,
-                                                &ultrasonicISR6,
-                                                &ultrasonicISR7};
+                                         &ultrasonicISR1,
+                                         &ultrasonicISR2,
+                                         &ultrasonicISR3,
+                                         &ultrasonicISR4,
+                                         &ultrasonicISR5,
+                                         &ultrasonicISR6,
+                                         &ultrasonicISR7};
                                                 
 class Ultrasonic;
 
@@ -334,8 +342,8 @@ Ultrasonic *ultrasonics[8];
 
 class Ultrasonic : public SampleableDevice {
 private:
-  uint8 echoPin;
   uint8 triggerPin;
+  uint8 echoPin;
 
   uint32 startTime;
   bool isEchoLow;
@@ -345,16 +353,19 @@ private:
 
 public:
   Ultrasonic() {
-    echoPin = serialRead();
-    delay(20);
     triggerPin = serialRead();
-    delay(20);
+    echoPin = serialRead();
     
-    digitalWrite(triggerPin,LOW);
+    pinMode(triggerPin, OUTPUT);
+    pinMode(echoPin, INPUT);
+    
+    digitalWrite(triggerPin, LOW);
 
     ultrasonics[ultrasonicCount] = this;
+    attachInterrupt(echoPin, *(ultrasonicISRList[ultrasonicCount]), CHANGE);
     ultrasonicCount++;
-    //attachInterrupt(echoPin, ultrasonicISRList[ultrasonicCount], CHANGE);
+    
+    val = 0;
   }
 
   void localISR() {
@@ -449,6 +460,15 @@ void firmwareInit() {
     switch (deviceCode) {
     case ANALOG_INPUT_CODE:
       deviceList.add(new AnalogInput());
+      break;
+    case PWM_OUTPUT_CODE:
+      deviceList.add(new PwmOutput());
+      break;
+    case DIGITAL_INPUT_CODE:
+      deviceList.add(new DigitalInput());
+      break;
+    case DIGITAL_OUTPUT_CODE:
+      deviceList.add(new DigitalOutput());
       break;
     case CYTRON_CODE:
       deviceList.add(new Cytron());

@@ -75,7 +75,7 @@ public class MapleComm {
 	}
 	
 	/*
-	 * Process the returned byte buffer from the Maple.
+	 * Wait for, and process, up-to-date sensor data from the Maple
 	 */
 	public void updateSensorData() {
 		mapleIO.sendSensorDataRequest();
@@ -83,10 +83,8 @@ public class MapleComm {
 			Thread.sleep(1);
 		} catch (InterruptedException e) { }
 		ByteBuffer buff = ByteBuffer.wrap(mapleIO.getMostRecentMessage());
-		if (buff.array().length != consumeSize) {
-			System.err.println("Received sensor data message is different size from expected");
-			return;
-		}
+		
+		// Give the byte buffer to each device and let it take what it needs
 		for (MapleDevice device : deviceList) {
 			device.consumeMessageFromMaple(buff);
 		}

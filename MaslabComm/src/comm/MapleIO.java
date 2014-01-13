@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 
 import jssc.SerialPort;
 import jssc.SerialPortException;
-import simulation.SimulatedPort;
 
 public class MapleIO {
 	
