@@ -67,9 +67,6 @@ public:
     }
     
     devicesArraySize = SerialUSB.read();
-    delay(20);
-    SerialUSB.write('n'); ///
-    SerialUSB.write(devicesArraySize); ///
     devices = (Device**) malloc(sizeof(Device*) * devicesArraySize);
     count = 0;
 
@@ -91,16 +88,11 @@ public:
   void set() {
     while (true) {
       uint8 deviceIndex = SerialUSB.read();
-      delay(20);
-      SerialUSB.write('s'); ///
-      SerialUSB.write(deviceIndex); ///
       if (deviceIndex == END) {
         return;
       }
       if (deviceIndex >= count) {
-        while (SerialUSB.read() != END) {
-          delay(20);
-        }
+        while (SerialUSB.read() != END);
         return;
       }
       devices[deviceIndex]->set();
@@ -109,7 +101,6 @@ public:
 
   void add(Device *device) {
     if (count < devicesArraySize) {
-      SerialUSB.write('a'); ///
       devices[count] = device;
       count++;
     } else {
@@ -135,22 +126,16 @@ private:
   uint8 pwmPin;
 public:
   Cytron() {
-    SerialUSB.write('c'); ///
     dirPin = SerialUSB.read();
     pwmPin = SerialUSB.read();
-    SerialUSB.write(dirPin); ///
-    SerialUSB.write(pwmPin); ///
     pinMode(dirPin, OUTPUT);
     pinMode(pwmPin, PWM);
     setSpeed(0);
   }
 
   void set() {
-    SerialUSB.write('c'); ///
     uint8 msb = SerialUSB.read();
     uint8 lsb = SerialUSB.read();
-    SerialUSB.write(msb); ///
-    SerialUSB.write(lsb); ///
     uint16 speed = msb;
     speed = (speed << 8) + lsb;
     setSpeed(speed);
@@ -170,7 +155,7 @@ private:
 public:
   AnalogInput() {
     pin = SerialUSB.read();
-    pinMode(pin, ANALOG_INPUT);
+    pinMode(pin, INPUT_ANALOG);
   }
   void sample() {
     val = analogRead(pin);
@@ -196,8 +181,8 @@ public:
     uint8 msb = SerialUSB.read();
     uint8 lsb = SerialUSB.read();
     uint16 dutyCycle = msb;
-    dutyCycle = (speed << 8) + lsb;
-    pwmWrite(pwmPin, dutyCycle);
+    dutyCycle = (dutyCycle << 8) + lsb;
+    pwmWrite(pin, dutyCycle);
   }
 }
 
@@ -214,7 +199,7 @@ public:
     val = digitalRead(pin);
   }
   void get() {
-    SerialUSB.write(bool);
+    SerialUSB.write(val);
   }
 }
 
@@ -222,7 +207,7 @@ class DigitalOutput : public SettableDevice {
 private:
   uint8 pin;
 public:
-  public DigitalOutput() {
+  DigitalOutput() {
     pin = SerialUSB.read();
     pinMode(pin, OUTPUT);
   }
@@ -346,9 +331,6 @@ void setup() {
 void loop() {
   //sample sensors and buffer
   char header = SerialUSB.read();
-  delay(20);
-  SerialUSB.write('h'); ///
-  SerialUSB.write(header); ///
   switch (header) {
   case INIT:
     firmwareInit();
@@ -362,30 +344,19 @@ void loop() {
   case END:
     break;
   default:
-    uint8 blah = 0;
-    while (blah != END) {
-      blah = SerialUSB.read();
-      delay(20);
-      SerialUSB.write('l'); ///
-      SerialUSB.write(blah); ///
-    }
+    while (SerialUSB.read() != END);
     break;
   }
-  SerialUSB.write('e'); ///
 }
 
 
 void firmwareInit() {
-  
   initStatus = false;
   deviceList.init();
 
   uint8 deviceCode;
   while (true) {
     deviceCode = SerialUSB.read();
-    delay(20);
-    SerialUSB.write('i'); ///
-    SerialUSB.write(deviceCode); ///
     switch (deviceCode) {
     case ANALOG_INPUT_CODE:
       deviceList.add(new AnalogInput());
@@ -400,9 +371,7 @@ void firmwareInit() {
       initStatus = true;
       return;
     default:
-      while (SerialUSB.read() != END) {
-        delay(20);
-      }
+      while (SerialUSB.read() != END);
       return;
     }
   }
