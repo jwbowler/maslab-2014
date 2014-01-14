@@ -3,13 +3,13 @@
 
 /* features 
  [ ] dagu motor controller
- [x] cytron motor controller
- [ ] encoder
- [x] gyro
+ [X] cytron motor controller
+ [X] encoder
+ [X] gyro
  [ ] servo
  [X] ultrasonic
- [x] IR
- [x] analog read
+ [X] IR
+ [X] analog read
  [X] analog write
  [X] digital read
  [X] digital write
@@ -65,7 +65,9 @@ public:
   void set() {}
 };
 
+// device-specific data that DeviceList needs to reference
 uint8 ultrasonicCount;
+uint8 encoderCount;
 
 class DeviceList {
 private:
@@ -128,6 +130,9 @@ public:
   }
 };
 
+
+
+
 //===================================
 // DEVICE IMPLEMENTATIONS
 //===================================
@@ -138,10 +143,14 @@ public:
 #define DIGITAL_OUTPUT_CODE 'd'
 
 #define CYTRON_CODE 'C'
+#define ENCODER_CODE 'N'
 #define GYROSCOPE_CODE 'Y'
 #define ULTRASONIC_CODE 'U'
 
 
+//-----------------------------------
+// Analog Input
+//-----------------------------------
 
 class AnalogInput : public SampleableDevice {
 private:
@@ -164,6 +173,11 @@ public:
   }
 };
 
+
+//-----------------------------------
+// PWM Output
+//-----------------------------------
+
 class PwmOutput : public SettableDevice {
 private:
   uint8 pin;
@@ -181,6 +195,11 @@ public:
     pwmWrite(pin, dutyCycle);
   }
 };
+
+
+//-----------------------------------
+// Digital Input
+//-----------------------------------
 
 class DigitalInput : public SampleableDevice {
 private:
@@ -200,6 +219,11 @@ public:
   }
 };
 
+
+//-----------------------------------
+// Digital Output
+//-----------------------------------
+
 class DigitalOutput : public SettableDevice {
 private:
   uint8 pin;
@@ -215,6 +239,11 @@ public:
     digitalWrite(pin, value);
   }
 };
+
+
+//-----------------------------------
+// Cytron motor controller
+//-----------------------------------
 
 class Cytron : public SettableDevice {
 private:    
@@ -243,6 +272,11 @@ public:
     analogWrite(pwmPin, reverse ? 2 * (speed ^ 0xFFFF) : 2 * speed);
   }
 };
+
+
+//-----------------------------------
+// Gyroscope
+//-----------------------------------
 
 class Gyroscope : public SampleableDevice {
 private:
@@ -314,6 +348,11 @@ public:
     SerialUSB.write(lsb);
   }
 };
+
+
+//-----------------------------------
+// Ultrasonic range finder
+//-----------------------------------
 
 void ultrasonicISR(uint8 index);
 
@@ -412,6 +451,85 @@ void ultrasonicISR(uint8 index) {
 }
 
 
+//-----------------------------------
+// Encoder (Pololu 29:1 64CPR)
+//-----------------------------------
+
+void encoderISR(uint8 index);
+
+void encoderISR0() { encoderISR(0); }
+void encoderISR1() { encoderISR(1); }
+void encoderISR2() { encoderISR(2); }
+void encoderISR3() { encoderISR(3); }
+void encoderISR4() { encoderISR(4); }
+void encoderISR5() { encoderISR(5); }
+void encoderISR6() { encoderISR(6); }
+void encoderISR7() { encoderISR(7); }
+
+typedef void (*EncoderISRPtr)();
+EncoderISRPtr encoderISRList[8] = {&encoderISR0,
+                                   &encoderISR1,
+                                   &encoderISR2,
+                                   &encoderISR3,
+                                   &encoderISR4,
+                                   &encoderISR5,
+                                   &encoderISR6,
+                                   &encoderISR7};
+                                                
+class Encoder;
+
+Encoder *encoders[8];
+
+class Encoder : public SampleableDevice {
+private:
+  uint8 pinA;
+  uint8 pinB;
+
+  uint16 ticks;
+
+public:
+  Encoder() {
+    pinA = serialRead();
+    pinB = serialRead();
+    
+    pinMode(pinA, INPUT);
+    pinMode(pinB, INPUT);
+    
+    encoders[encoderCount] = this;
+    attachInterrupt(pinA, *(encoderISRList[encoderCount]), RISING);
+    encoderCount++;
+    
+    ticks = 0;
+  }
+
+  void localISR() {
+  // TODO: atomicize
+    if (digitalRead(pinB)) {
+        ticks--;
+    } else {
+        ticks++;
+    }
+  }
+
+  void sample() { }
+
+  void get() {
+    // TODO: atomicize
+    //uint16 temp = __sync_fetch_and_nand(&ticks, 0); // doesn't work in arm-...-gcc?
+    uint16 temp = ticks;
+    ticks = 0;
+    uint8 msb = temp >> 8;
+    uint8 lsb = (uint8) temp;
+    SerialUSB.write(msb);
+    SerialUSB.write(lsb);
+  }
+};
+
+void encoderISR(uint8 index) {
+  encoders[index]->localISR();
+}
+
+
 //===================================
 // LOGIC
 //===================================
@@ -472,6 +590,9 @@ void firmwareInit() {
       break;
     case CYTRON_CODE:
       deviceList.add(new Cytron());
+      break;
+    case ENCODER_CODE:
+      deviceList.add(new Encoder());
       break;
     case GYROSCOPE_CODE:
       deviceList.add(new Gyroscope());
