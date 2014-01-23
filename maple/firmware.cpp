@@ -14,6 +14,8 @@
  [X] digital read
  [X] digital write
  */
+ 
+#define NUM_PINS 38
 
 #define LED_PIN BOARD_LED_PIN
 
@@ -92,6 +94,7 @@ public:
     count = 0;
 
     ultrasonicCount = 0;
+    encoderCount = 0;
   }
 
   void sample() {
@@ -381,17 +384,20 @@ Ultrasonic *ultrasonics[8];
 
 class Ultrasonic : public SampleableDevice {
 private:
+  
   uint8 triggerPin;
   uint8 echoPin;
 
   uint32 startTime;
   bool isEchoLow;
   bool receivedEcho;
-
+  
   uint16 val;
-
+  
 public:
   Ultrasonic() {
+    
+    
     triggerPin = serialRead();
     echoPin = serialRead();
     
@@ -402,9 +408,9 @@ public:
 
     ultrasonics[ultrasonicCount] = this;
     attachInterrupt(echoPin, *(ultrasonicISRList[ultrasonicCount]), CHANGE);
-    ultrasonicCount++;
     
     val = 0;
+    ultrasonicCount++;
   }
 
   void localISR() {
@@ -534,6 +540,7 @@ void encoderISR(uint8 index) {
 // LOGIC
 //===================================
 
+void resetAllPins();
 void firmwareInit();
 void get();
 void set();
@@ -551,6 +558,7 @@ void loop() {
   char header = serialRead();
   switch (header) {
   case INIT:
+    resetAllPins();
     firmwareInit();
     break;
   case GET:
@@ -567,6 +575,12 @@ void loop() {
   }
 }
 
+void resetAllPins() {
+  for (int i = 0; i < NUM_PINS; i++) {
+    detachInterrupt(i);
+    pinMode(i, INPUT);
+  }
+}
 
 void firmwareInit() {
   initStatus = false;
@@ -643,11 +657,11 @@ __attribute__((constructor)) void premain() {
 }
 
 int main(void) {
-    setup();
+  setup();
 
-    while (true) {
-        loop();
-    }
+  while (true) {
+    loop();
+  }
 
-    return 0;
+  return 0;
 }
