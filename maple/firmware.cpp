@@ -388,11 +388,11 @@ private:
   uint8 triggerPin;
   uint8 echoPin;
 
-  uint32 startTime;
-  bool isEchoLow;
-  bool receivedEcho;
+  volatile uint32 startTime;
+  volatile bool isEchoLow;
+  volatile bool receivedEcho;
   
-  uint16 val;
+  volatile uint16 val;
   
 public:
   Ultrasonic() {
@@ -491,7 +491,7 @@ private:
   uint8 pinA;
   uint8 pinB;
 
-  uint16 ticks;
+  volatile uint16 ticks;
 
 public:
   Encoder() {
