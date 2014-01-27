@@ -1,12 +1,14 @@
 #include <stdlib.h>
 #include <wirish/wirish.h>
 
+#include "libraries/Servo/Servo.h"
+
 /* features 
  [ ] dagu motor controller
  [X] cytron motor controller
  [X] encoder
  [X] gyro
- [ ] servo
+ [X] servo
  [X] ultrasonic
  [X] IR
  [X] analog read
@@ -42,6 +44,14 @@ HardwareSPI spi2(2);
 uint8 serialRead() {
     while (!SerialUSB.available());
     return SerialUSB.read();
+}
+
+// MSB first
+uint16 serialRead16Bit() {
+    uint16 out = serialRead();
+    out <<= 8;
+    out += serialRead();
+    return out;
 }
 
 
@@ -148,6 +158,7 @@ public:
 #define CYTRON_CODE 'C'
 #define ENCODER_CODE 'N'
 #define GYROSCOPE_CODE 'Y'
+#define SERVO_CODE 'V'
 #define ULTRASONIC_CODE 'U'
 
 
@@ -354,6 +365,36 @@ public:
 
 
 //-----------------------------------
+// Servo
+//-----------------------------------
+
+class ServoMotor : public SettableDevice {
+private:    
+  uint8 pin;
+  Servo servo;
+  
+public:
+  ServoMotor() {
+    pin = serialRead();
+    uint16 minPulseWidth = serialRead16Bit();
+    uint16 maxPulseWidth = serialRead16Bit();
+    uint16 minAngle = serialRead16Bit();
+    uint16 maxAngle = serialRead16Bit();
+    servo.attach(pin, minPulseWidth, maxPulseWidth, minAngle, maxAngle);
+  }
+  
+  ~ServoMotor() {
+    servo.detach();
+  }
+
+  void set() {
+    uint16 pulseWidth = serialRead16Bit();
+    //SerialUSB.print(pulseWidth);
+    servo.writeMicroseconds(pulseWidth);
+  }
+};
+
+//-----------------------------------
 // Ultrasonic range finder
 //-----------------------------------
 
@@ -396,8 +437,6 @@ private:
   
 public:
   Ultrasonic() {
-    
-    
     triggerPin = serialRead();
     echoPin = serialRead();
     
@@ -411,6 +450,10 @@ public:
     
     val = 0;
     ultrasonicCount++;
+  }
+  
+  ~Ultrasonic() {
+    detachInterrupt(echoPin);
   }
 
   void localISR() {
@@ -506,6 +549,10 @@ public:
     encoderCount++;
     
     ticks = 0;
+  }
+  
+  ~Encoder() {
+    detachInterrupt(pinA);
   }
 
   void localISR() {
@@ -610,6 +657,9 @@ void firmwareInit() {
       break;
     case GYROSCOPE_CODE:
       deviceList.add(new Gyroscope());
+      break;
+    case SERVO_CODE:
+      deviceList.add(new ServoMotor());
       break;
     case ULTRASONIC_CODE:
       deviceList.add(new Ultrasonic());
