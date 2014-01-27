@@ -48,6 +48,7 @@ public class Servo extends Actuator {
 		return out;
 	}
 	
+	// Angle is in degrees. Different devices (subclasses) have different angle ranges.
 	public void setAngle(double angle) {
 		double scaledAngle = (angle - minAngle) / (maxAngle - minAngle);
 		scaledAngle = Math.max(scaledAngle, minAngle);
