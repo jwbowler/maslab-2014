@@ -96,7 +96,7 @@ public class BotClientMap {
 	}
 
 	public static class Wall {
-		enum WallTypeShort {
+		private enum WallTypeShort {
 			N, O, S, R
 		};
 
@@ -216,7 +216,8 @@ public class BotClientMap {
 						break;
 					case 'i':
 						Wall w = walls.remove(walls.size() - 1);
-						double theta = Math.atan2(w.end.y - w.start.y, w.end.x - w.start.x);
+						double theta = Math.atan2(w.end.y - w.start.y, w.end.x
+								- w.start.x);
 						startPose = new Pose(w.start.x, w.start.y, theta);
 
 					}
