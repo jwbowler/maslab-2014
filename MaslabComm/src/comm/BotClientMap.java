@@ -21,7 +21,7 @@ public class BotClientMap {
 	public ArrayList<Wall> walls;
 
 	public BotClientMap() {
-		walls = new ArrayList<>();
+		walls = new ArrayList<Wall>();
 	}
 
 	public void load(String s) {
@@ -100,7 +100,7 @@ public class BotClientMap {
 			N, O, S, R
 		};
 
-		enum WallType {
+		public enum WallType {
 			NORMAL, OPPONENT, SILO, REACTOR
 		};
 
