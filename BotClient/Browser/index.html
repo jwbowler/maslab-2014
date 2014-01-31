@@ -13,7 +13,7 @@
 	var conn2 = null;
 	
 	$(document).ready( function() {
-		//initSocket();
+		initSocket();
 	});
 	
 	function initSocket() {
@@ -54,8 +54,17 @@
 				setImage(data[i+2]);
 				continue;
 			}
-			var str="<h2>"+data[i+2][0]+"</h2>"+data[i+2][1]+"<br>";
-			$("#"+field).html(str);
+			if ( field=="MSG" ){
+				var time = 180-data[i+2][1];
+				var seconds = ""+Math.round(time)%60;
+				var minutes = Math.floor(time/60);
+				if ( seconds.length<2 )
+					seconds = "0"+seconds;
+				$("#timer").html(minutes+":"+seconds);
+			} else {
+				var str="<h2>"+data[i+2][0]+"</h2>"+data[i+2][1]+"<br>";
+				$("#"+field).html(str);
+			}
 		}
 	}
 	
