@@ -26,6 +26,7 @@ public class BotClient {
 	
 	volatile private String map = null;
 	volatile private boolean gameStarted = false;
+	volatile private boolean waitingForGameStarted = false;
 	
 	public BotClient( String host_and_port, String token, boolean debug ) {
 		this.debug = debug;
@@ -50,6 +51,10 @@ public class BotClient {
 			 "[\""+title+"\",\""+value+"\"]}done");
 	}
 	
+	public void sendRaw( String raw ) {
+		send("{\"token\":\""+token+"\"," + raw + "}done");
+	}
+	
 	public void sendImage( BufferedImage img ) {
 		try { 
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -65,7 +70,7 @@ public class BotClient {
 	private void send( String msg ) {
 		try {
 	        if ( debug ) 
-	        	System.out.println("SEND: " + msg);
+	        	System.out.println("[SEND] " + msg);
 	        out.print(msg+"\n");
 	        out.flush();
 		} catch ( Exception e ) {
@@ -75,7 +80,7 @@ public class BotClient {
 	public void pingGame() {
 		try {
 	        if ( debug ) 
-	        	System.out.println("GAME PING");
+	        	System.out.println("[SEND] GAME PING");
 	        out.print("game\n");
 	        out.flush();
 		} catch ( Exception e ) {
@@ -96,10 +101,29 @@ public class BotClient {
 	}
 	
 	public String getMap() {
+		map = null;
+		send("MAP","junk","junk");
+		int i = 0;
+		while ( map==null && i < 500 ){
+			try{
+				Thread.sleep(20);
+			} catch ( Exception e ){ return null; }
+			i++;
+		}
 		return map;
 	}
 	
 	public boolean gameStarted() {
+		this.waitingForGameStarted = true;
+		this.pingGame();
+		int i = 0;
+		while ( this.waitingForGameStarted && i < 500 ) {
+			try {
+				Thread.sleep(20);
+			} catch ( Exception e ) {}
+			i++;
+		}
+		
 		return gameStarted;
 	}
 	
@@ -116,30 +140,31 @@ public class BotClient {
 		public void pong() {
 			long ping_end = System.currentTimeMillis();
 			if ( debug )
-				System.out.println("BotClient ping received : " + (ping_end-ping_start)+"ms");
+				System.out.println("[CALLBACK] BotClient ping received : " + (ping_end-ping_start)+"ms");
 			latency = (ping_end-ping_start);
 			ping_sent = false;
 		}
 		
 		public void connected() {
 			if ( debug )
-				System.out.println("BotClient connected successfully!");
+				System.out.println("[CALLBACK] BotClient connected successfully!");
 		}
 		
 		public void map( String m ) {
 			if ( debug )
-				System.out.println("MAP : " + m);
+				System.out.println("[CALLBACK] MAP : " + m);
 			map = m;
 		}
 		
 		public void game( String state ) {
 			if ( debug )
-				System.out.println("GAME : " + state);
+				System.out.println("[CALLBACK] GAME : " + state);
 			if ( state.toLowerCase().equals("start") ) {
 				gameStarted = true;
 			} else {
 				gameStarted = false;
 			}
+			waitingForGameStarted = false;
 		}
 	}
 }

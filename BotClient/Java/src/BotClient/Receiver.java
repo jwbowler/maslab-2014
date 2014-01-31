@@ -44,6 +44,7 @@ public class Receiver extends Thread {
 	}
 	
 	public void process( String msg ) {
+		//System.out.println(msg);
 		if ( msg.equals("connected") ) {
 			writeback.connected();
 		} else if ( msg.equals("pong") ) {
