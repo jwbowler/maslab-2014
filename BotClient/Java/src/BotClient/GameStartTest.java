@@ -7,9 +7,13 @@ public class GameStartTest {
 		
 		while( !botclient.gameStarted() ) {
 		}
+		
 		System.out.println("***GAME STARTED***");
-		System.out.println("MAP --> " + botclient.getMap());
+		//for ( int i = 0; i < 100; i++ )
+			System.out.println("MAP --> " + botclient.getMap());
 		
 		botclient.close();
 	}
 }
+
+// {"token":"EViL","GAME":"start"}done\n
