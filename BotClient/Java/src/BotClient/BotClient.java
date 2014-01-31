@@ -96,6 +96,17 @@ public class BotClient {
 	}
 	
 	public String getMap() {
+	    map = null;
+	    send("MAP", "junk", "junk");
+	    // Spin until we receive the new map data
+        try {
+    	    while (map == null) {
+                Thread.sleep(100);
+    	    }
+        } catch (InterruptedException e) {
+            return null;
+        }
+	    
 		return map;
 	}
 	
