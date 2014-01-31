@@ -104,12 +104,21 @@ public class BotClient {
 		map = null;
 		send("MAP","junk","junk");
 		int i = 0;
-		while ( map==null && i < 500 ){
-			try{
+		while (map==null && i < 500){
+			try {
 				Thread.sleep(20);
-			} catch ( Exception e ){ return null; }
+			}
+			catch (Exception e){
+			}
 			i++;
 		}
+		
+		if (map == null) {
+    		// Timeout -- crash the system with an error
+    		System.err.println("ERROR: MAP NOT RECEIVED FROM BOT_CLIENT. REDEEM THIS LOG MESSAGE FOR A FREE REMATCH. RESTRICTIONS MAY APPLY, ASK YOUR LOCAL MASLAB DEALER FOR MORE INFORMATION.");
+    		System.exit(-1);
+		}
+		
 		return map;
 	}
 	
